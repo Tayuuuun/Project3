@@ -1,0 +1,39 @@
+# Конфигурационные параметры для анализа театральных отзывов
+
+# Пути к данным
+DATA_PATHS = {
+    'reviews': '/Users/taya/Downloads/Данные.csv',  # Основной файл с отзывами
+    'output': {
+        'wordcloud': 'wordcloud.png',
+        'heatmap': 'heatmap.png',
+        'combined': 'combined_plots.png'
+    }
+}
+
+# Настройки обработки текста
+TEXT_PROCESSING = {
+    'stopwords': ['спектакль', 'театр', 'отзыв'],  # Дополнительные стоп-слова
+    'encoding': 'utf-8',
+    'date_format': '%d.%m.%Y'
+}
+
+# Настройки визуализации
+VISUALIZATION = {
+    'colors': {
+        'top_plays': '#2ecc71',
+        'active_authors': '#3498db',
+        'reviews_trend': '#e74c3c'
+    },
+    'figure_sizes': {
+        'wordcloud': (12, 6),
+        'heatmap': (15, 10),
+        'combined': (18, 12)
+    }
+}
+
+# Параметры анализа
+ANALYSIS_PARAMS = {
+    'min_rating': 1,
+    'max_rating': 10,
+    'top_n': 5  # Количество топовых элементов для отображения
+}
