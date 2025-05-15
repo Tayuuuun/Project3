@@ -1,0 +1,133 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+import seaborn as sns
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+# Скачиваем ресурсы для обработки текста
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+def analyze_and_visualize(data_path):
+    try:
+        # Загрузка и переименование данных
+        df = pd.read_csv(
+            data_path,
+            sep=';',
+            skiprows=[1],
+            encoding='utf-8',
+            header=0
+        ).rename(columns={
+            'Unnamed: 0': 'Спектакль',
+            'Unnamed: 1': 'Автор',
+            'Unnamed: 2': 'Текст',
+            'Unnamed: 3': 'Оценка',
+            'Unnamed: 4': 'Дата'
+        })
+
+        # Очистка данных
+        df = df.dropna(subset=['Спектакль', 'Дата', 'Оценка'])
+        df = df.drop_duplicates()
+        df['Оценка'] = pd.to_numeric(df['Оценка'], errors='coerce')
+        df = df[(df['Оценка'] >= 1) & (df['Оценка'] <= 10)]
+
+        if df.empty:
+            raise ValueError("После очистки данных не осталось записей")
+
+        # Преобразование дат
+        df['Дата'] = pd.to_datetime(df['Дата'], format='%d.%m.%Y', errors='coerce')
+        df = df.dropna(subset=['Дата'])
+        df['Год'] = df['Дата'].dt.year
+
+        # Анализ данных
+        analysis_results = {
+            "top_plays": df.groupby('Спектакль')['Оценка'].mean().sort_values(ascending=False).head(5),
+            "active_authors": df['Автор'].value_counts().head(5),
+            "avg_rating": round(df['Оценка'].mean(), 2),
+            "reviews_by_year": df['Год'].value_counts().sort_index()
+        }
+
+        # 1. Облако слов
+        def generate_wordcloud():
+            russian_stopwords = set(stopwords.words('russian') + ['спектакль', 'театр', 'отзыв']
+            lemmatizer = WordNetLemmatizer()
+            texts = df['Текст'].dropna().values
+            all_words = []
+
+            for text in texts:
+                words = text.lower().split()
+                clean_words = [
+                    lemmatizer.lemmatize(word.strip(".,!?»«()"))
+                    for word in words
+                    if word.isalpha() and word not in russian_stopwords
+                ]
+                all_words.extend(clean_words)
+
+            wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='viridis').generate(' '.join(all_words))
+            plt.figure(figsize=(12, 6))
+            plt.imshow(wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            plt.title('Частотный анализ текстов отзывов', pad=20)
+            plt.savefig('wordcloud.png', bbox_inches='tight')
+            plt.show()
+
+        # 2. Тепловая карта
+        def plot_heatmap():
+            heatmap_data = df.pivot_table(index='Спектакль', columns='Год', values='Оценка', aggfunc='mean', fill_value=0)
+            plt.figure(figsize=(15, 10))
+            sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="YlGnBu", linewidths=.5, cbar_kws={'label': 'Средняя оценка'})
+            plt.title('Тепловая карта оценок по годам', pad=15)
+            plt.xlabel('Год')
+            plt.ylabel('Спектакль')
+            plt.xticks(rotation=45)
+            plt.savefig('heatmap.png', bbox_inches='tight')
+            plt.show()
+
+        # 3. Комбинированная визуализация
+        plt.figure(figsize=(18, 12))
+
+        
+        # Топ-5 спектаклей
+    plt.subplot(2, 2, 1)
+    analysis_results['top_plays'].sort_values().plot(kind='barh', color='#2ecc71')
+    plt.title('ТОП-5 спектаклей', fontsize=12)
+    plt.xlabel('Средняя оценка')
+    plt.grid(axis='x', alpha=0.2)
+
+    # Активные авторы
+    plt.subplot(2, 2, 2)
+    analysis_results['active_authors'].plot(kind='bar', color='#3498db')
+    plt.title('Самые активные авторы', fontsize=12)
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', alpha=0.2)
+
+    # Распределение оценок
+    plt.subplot(2, 2, 3)
+    df['Оценка'].value_counts().sort_index().plot(kind='pie', autopct='%1.1f%%')
+    plt.title('Распределение оценок', fontsize=12)
+    plt.ylabel('')
+
+    # Динамика отзывов
+    plt.subplot(2, 2, 4)
+    analysis_results['reviews_by_year'].plot(kind='line', marker='o', color='#e74c3c')
+    plt.title('Отзывы по годам', fontsize=12)
+    plt.grid(alpha=0.2)
+
+    plt.tight_layout()
+    plt.savefig('combined_plots.png', dpi=150)
+    plt.show()
+
+# Запуск визуализаций
+        generate_wordcloud()
+        plot_heatmap()
+
+        return analysis_results
+
+    except Exception as e:
+        print(f"❌ Ошибка при создании визуализаций: {str(e)}")
+        return None
+
+# Пример использования:
+# results = analyze_and_visualize('/path/to/your/Данные.csv')
