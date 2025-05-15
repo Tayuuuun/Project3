@@ -1,0 +1,11 @@
+pandas
+matplotlib
+seaborn
+plotly
+streamlit
+wordcloud
+requests
+python-dotenv
+nltk
+numpy
+jupyterlab 
